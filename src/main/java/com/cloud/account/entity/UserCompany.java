@@ -1,6 +1,7 @@
 package com.cloud.account.entity;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.Date;
 
 public class UserCompany implements Serializable {
@@ -15,6 +16,8 @@ public class UserCompany implements Serializable {
     private String smscode;
 
     private Date smstime;
+    
+    private BigDecimal availableAmount;
 
     private String companyName;
 
@@ -337,4 +340,14 @@ public class UserCompany implements Serializable {
     public void setIsDeleted(Integer isDeleted) {
         this.isDeleted = isDeleted;
     }
+
+	public BigDecimal getAvailableAmount() {
+		return availableAmount;
+	}
+
+	public void setAvailableAmount(BigDecimal availableAmount) {
+		this.availableAmount = availableAmount;
+	}
+    
+    
 }
