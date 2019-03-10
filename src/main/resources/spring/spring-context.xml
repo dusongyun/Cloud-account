@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+    xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:task="http://www.springframework.org/schema/task"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-4.1.xsd
+           http://www.springframework.org/schema/context
+           http://www.springframework.org/schema/context/spring-context.xsd
+           http://www.springframework.org/schema/tx 
+     	   http://www.springframework.org/schema/tx/spring-tx-4.1.xsd
+     	   http://www.springframework.org/schema/task
+		   http://www.springframework.org/schema/task/spring-task-4.1.xsd
+     	   http://www.springframework.org/schema/mvc
+           http://www.springframework.org/schema/mvc/spring-mvc.xsd 
+           http://www.springframework.org/schema/util 
+           http://www.springframework.org/schema/util/spring-util-4.0.xsd
+           http://www.springframework.org/schema/aop  
+           http://www.springframework.org/schema/aop/spring-aop-4.0.xsd">
+
+    <!-- 包的自动扫描 -->
+    <context:component-scan base-package="com.cloud"></context:component-scan>
+
+    <!--避免IE执行AJAX时，返回JSON出现下载文件 -->
+    <bean id="mappingJacksonHttpMessageConverter" class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter">
+        <property name="supportedMediaTypes">
+            <list>
+                <value>text/html;charset=UTF-8</value>
+            </list>
+        </property>
+    </bean>
+    <!-- 增加新的返回格式 ：xml ,json -->
+    <mvc:annotation-driven>
+        <mvc:message-converters>
+            <bean class="org.springframework.http.converter.StringHttpMessageConverter" />
+            <bean class="org.springframework.http.converter.ResourceHttpMessageConverter" />
+            <bean class="org.springframework.http.converter.json.MappingJackson2HttpMessageConverter" />
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+    <!-- 对静态资源文件的访问 -->
+    <mvc:default-servlet-handler />
+    <task:annotation-driven executor="myExecutor" scheduler="myScheduler" />
+    <task:executor id="myExecutor" pool-size="50" />
+    <task:scheduler id="myScheduler" pool-size="1000" />
+    <!-- 定义跳转的文件的前后缀 ，视图模式配置 -->
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/pages/" />
+        <property name="suffix" value=".jsp" />
+    </bean>
+
+    <!-- <bean id="CacheListener" class="com.gpai.nams.listener.CacheListener"/> -->
+    <!-- 文件上传 -->
+    <bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+        <property name="defaultEncoding" value="utf-8" />
+        <property name="maxUploadSize" value="10485760000" />
+        <property name="maxInMemorySize" value="40960" />
+    </bean>
+
+    <!-- 登陆拦截器 -->
+    <mvc:interceptors>
+        <bean class="com.cloud.account.interceptor.HttpTokenInteceptor" />
+        <bean class="com.cloud.account.interceptor.LoginAuthInteceptor" />
+
+        <mvc:interceptor>
+            <!-- 需拦截的地址 -->
+            <mvc:mapping path="*.do" />
+            <!-- 需排除拦截的地址 -->
+            <mvc:exclude-mapping path="/file/*.do" />
+            <bean id="httpTokenInterceptor" class="com.cloud.account.interceptor.HttpTokenInteceptor" />
+        </mvc:interceptor>
+        <mvc:interceptor>
+            <!-- 需拦截的地址 -->
+            <mvc:mapping path="*.do" />
+            <!-- 需排除拦截的地址 -->
+            <mvc:exclude-mapping path="/file/*.do" />
+            <bean id="loginInterceptor" class="com.cloud.account.interceptor.LoginAuthInteceptor" />
+        </mvc:interceptor>
+        <!-- 重复提交拦截器 -->
+    </mvc:interceptors>
+
+  
+    <!-- 初始化计算自然日 -->
+    <!-- <bean id="workdayUpdateJob" class="com.gpai.nams.job.ProductJob" scope="singleton" init-method="workdayUpdateJob"></bean> -->
+
+    <!-- 公告中更新成拍卖中定时任务 -->
+    <!-- <bean id="auctionStatusUpdateJob" class="com.gpai.nams.job.AuctionStatusJob" scope="singleton" 
+        init-method="auctionStatusUpdateJob"></bean> -->
+
+    <!--使用aspectj创建aop -->
+    <aop:aspectj-autoproxy />
+    <bean id="logAspect" class="com.cloud.account.aspect.LogAspect"></bean>
+
+</beans>

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="
+		http://www.springframework.org/schema/aop 
+		http://www.springframework.org/schema/aop/spring-aop-4.2.xsd
+		http://www.springframework.org/schema/mvc 
+		http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd
+		http://www.springframework.org/schema/beans 
+		http://www.springframework.org/schema/beans/spring-beans-4.0.xsd
+		http://www.springframework.org/schema/tx 
+		http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+		http://www.springframework.org/schema/context 
+		http://www.springframework.org/schema/context/spring-context-2.5.xsd">
+	<!-- 外部类使用 PropObj -->
+	<!-- <bean id="prop" class="org.springframework.beans.factory.config.PropertiesFactoryBean"> <property 
+		name="locations"> <list> <value>file:${global.config.path}/nams/props.properties</value> </list> </property> 
+		</bean> -->
+
+	<!-- 加载到系统配置CLASS使用 -->
+	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>file:${global.config.path}/account/db.properties</value>
+				<value>file:${global.config.path}/account/props.properties</value>
+			</list>
+		</property>
+		<property name="ignoreUnresolvablePlaceholders" value="true" />
+	</bean>
+
+	<!-- 配置文件类型化 -->
+	<bean class="com.cloud.util.PropObj">
+		<property name="smsUri" value="${sms.uri}"></property>
+		<property name="smsSpid" value="${sms.spid}"></property>
+		<property name="smsSppassword" value="${sms.sppassword}"></property>
+		<property name="smsDc" value="${sms.dc}"></property>
+		<property name="webchatAppid" value="${webchat.appid}" />
+		<property name="webchatSecret" value="${webchat.secret}" />
+		<property name="webchatSecretUrl" value="${webchat.secret_url}" />
+		<property name="webchatToken" value="${webchat.token}" />
+		<property name="webchatConfigPath" value="${webchat.configpath}" />
+        <property name="webchatTemplateId" value="${webchat.template_id}" />
+        <property name="domain" value="${domain}" />
+		<property name="aliOssEndpoint" value="${aliOss.ENDPOINT}" />
+		<property name="aliOssBacketName" value="${aliOss.BACKET_NAME}" />
+		<property name="aliOssAccessKeyId" value="${aliOss.ACCESS_KEY_ID}" />
+		<property name="aliOssAccessKeySecret" value="${aliOss.ACCESS_KEY_SECRET}" />
+		<property name="aliOssFolder" value="${aliOss.FOLDER}" />
+		<property name="gpaiUrl" value="${gpai.url}" />
+	</bean>
+
+	<!-- 配置dataSource -->
+	<bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
+		<property name="driverClassName" value="${jdbc.driverClass}"></property>
+		<property name="url" value="${jdbc.url}"></property>
+		<property name="username" value="${jdbc.username}"></property>
+		<property name="password" value="${jdbc.password}"></property>
+		<!-- 连接池最大使用连接数 -->
+		<property name="maxActive" value="20" />
+		<!-- 初始化连接大小 -->
+		<property name="initialSize" value="1" />
+		<!-- 获取连接最大等待时间 -->
+		<property name="maxWait" value="60000" />
+		<!-- 连接池最大空闲 <property name="maxIdle" value="28" /> -->
+		<!-- 连接池最小空闲 -->
+		<property name="minIdle" value="3" />
+		<!-- 自动清除无用连接 -->
+		<property name="removeAbandoned" value="true" />
+		<!-- 清除无用连接的等待时间 -->
+		<property name="removeAbandonedTimeout" value="180" />
+		<!-- 连接属性 -->
+		<property name="connectionProperties" value="clientEncoding=UTF-8" />
+	</bean>
+	<!-- 配置sqlSessionFactory: 将spring和mybatis整合 -->
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource"></property>
+		<property name="configLocation" value="classpath:mybatis-config.xml"></property>
+		<!-- 映射文件 -->
+		<property name="mapperLocations">
+			<list>
+				<value>classpath*:com/cloud/*/mapper/**.xml</value>
+				<value>classpath*:com/cloud/*/mapper/*/**.xml</value>
+			</list>
+		</property>
+		<!-- <property name="typeAliasesPackage" value="cn.zyy.ssm.vo"/> -->
+	</bean>
+	<!--配置 MapperScannerConfigurer：将Mapper接口生成代理注入到Spring -->
+	<bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+		<property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"></property>
+		<property name="basePackage" value="com.cloud"></property>
+	</bean>
+	<!-- 配置事务管理器 -->
+	<bean id="txManage" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"></property>
+	</bean>
+	<!-- 配置事务传播特性 -->
+	<tx:advice id="txAdvice" transaction-manager="txManage">
+		<tx:attributes>
+			<tx:method name="get" propagation="REQUIRED" />
+			<tx:method name="update" propagation="REQUIRED" />
+			<tx:method name="delete" propagation="REQUIRED" />
+			<tx:method name="insert" propagation="REQUIRED" />
+			<tx:method name="*" propagation="REQUIRED" />
+		</tx:attributes>
+	</tx:advice>
+
+	<aop:config>
+		<aop:pointcut expression="execution(* com.cloud.*.*.*(..))" id="pointcut" />
+		<aop:advisor advice-ref="txAdvice" pointcut-ref="pointcut" />
+	</aop:config>
+
+	<tx:annotation-driven transaction-manager="txManage" proxy-target-class="true" />
+
+	<!-- 进行包的自动扫描 <context:component-scan base-package="cn.gpai.auction"></context:component-scan> -->
+
+
+</beans>
